@@ -19,6 +19,8 @@ type Event struct {
 type Source struct {
 	Type   string `json:"type"`
 	UserID string `json:"userId"`
+	GroupID string `json:"groupId"`
+	RoomID string `json:"roomId"`
 }
 
 type Message struct {

@@ -9,6 +9,8 @@ import (
 
 func ReceiveMessageHandler(w http.ResponseWriter, r *http.Request) {
 	m := RawMessage{}
+	dio := Dio{}
+	dio = dio.NewDio()
 
 	rawM, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -32,6 +34,9 @@ func ReceiveMessageHandler(w http.ResponseWriter, r *http.Request) {
 	if m.Events[0].Message.Type == MessageTypeText {
 		if m.Events[0].Message.Text == "#hiew" {
 			fmt.Println("Wryyyy!!!! Zawarudo The World!!!!!")
+			if _, err := dio.BotClient.ReplyMessage(m.Events[0].ReplyToken, dio.LIFFURL).Do(); err != nil {
+				fmt.Errorf("dio reply error:", err)
+			}
 		}
 	}
 }
