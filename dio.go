@@ -44,13 +44,9 @@ func (d Dio) HandleEvent(events []*linebot.Event) error {
 	for _, event := range events {
 		switch event.Type {
 		case linebot.EventTypeMessage:
-			if err := d.EventTypeMessageHandler(event); err != nil {
-				return err
-			}
+			d.EventTypeMessageHandler(event)
 		default:
-			if err := d.MUDA(event.ReplyToken); err != nil {
-				return err
-			}
+			d.MUDA(event.ReplyToken)
 		}
 	}
 
