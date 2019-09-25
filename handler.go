@@ -1,42 +1,21 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 )
 
 func ReceiveMessageHandler(w http.ResponseWriter, r *http.Request) {
-	m := RawMessage{}
-	dio := Dio{}
-	dio = dio.NewDio()
+	dio := NewDio()
+	dioBot := dio.BotClient
 
-	rawM, err := ioutil.ReadAll(r.Body)
+	events, err := dioBot.ParseRequest(r)
 	if err != nil {
-		fmt.Errorf("read message from request error:", err)
+		fmt.Errorf("dio parse request error:", err)
 	}
-	defer r.Body.Close()
+	fmt.Println(fmt.Sprintf("len: %v, message received: %+v \n", len(events), events[0]))
 
-	fmt.Println(fmt.Sprintf("raw message received: %+v \n", string(rawM)))
-
-	if err = json.Unmarshal(rawM, &m); err != nil {
-		fmt.Errorf("json unmarshal message error:", err)
-	}
-
-	//if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-	//	fmt.Errorf("json unmarshal message error: %s", err)
-	//}
-	//
-
-	fmt.Println(fmt.Sprintf("message received: %+v \n", m))
-
-	if m.Events[0].Message.Type == MessageTypeText {
-		if m.Events[0].Message.Text == "#hiew" {
-			fmt.Println("Wryyyy!!!! Zawarudo The World!!!!!")
-			if _, err := dio.BotClient.ReplyMessage(m.Events[0].ReplyToken, dio.LIFFURL).Do(); err != nil {
-				fmt.Errorf("dio reply error:", err)
-			}
-		}
+	if err := dio.HandleEvent(events); err != nil {
+		fmt.Errorf("dio can't handle these events, error: %+v", err)
 	}
 }
