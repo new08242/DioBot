@@ -14,7 +14,7 @@ RUN apk add --no-cache \
     rm -rf /tmp/*
 
 
-ENV APP_PATH /go/src/pudjai-backend
+ENV APP_PATH /go/src/dio-bot
 WORKDIR ${APP_PATH}
 RUN go get -u github.com/tockins/realize
 
