@@ -1,0 +1,18 @@
+version : '3.5'
+services:
+  app:
+    container_name: dio-bot
+    build:
+      context: .
+      dockerfile: ./build/app/Dockerfile
+    image: dio-bot:dev
+    command: /bin/sh -c "cd ./app && realize start"
+    ports:
+      - 9999:9999
+    networks:
+      - dio-net
+
+networks:
+  dio-net:
+    name: dio-net
+    driver: bridge
