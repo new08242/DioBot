@@ -4,7 +4,7 @@ services:
     container_name: dio-bot
     build:
       context: .
-      dockerfile: ./build/app/Dockerfile
+      dockerfile: ./build/app/Dockerfile-bak
     image: dio-bot:dev
     command: /bin/sh -c "cd ./app && realize start"
     ports:
