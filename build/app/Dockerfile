@@ -1,23 +1,45 @@
-FROM golang:1.11.5-alpine3.8
+############################
+# STEP 1 build executable binary
+############################
+# golang alpine 1.12.6
+FROM golang@sha256:cee6f4b901543e8e3f20da3a4f7caac6ea643fd5a46201c3c2387183a332d989 as builder
 
-ENV DEP_VERSION="0.5.0"
+# Install git + SSL ca certificates.
+# Git is required for fetching the dependencies.
+# Ca-certificates is required to call HTTPS endpoints.
+RUN apk update && apk add --no-cache git ca-certificates tzdata && update-ca-certificates
 
-RUN apk add --no-cache \
-        ca-certificates \
-        curl \
-        git \
-        make \
-        openssl; \
-    curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o /bin/dep; \
-    chmod +x /bin/dep; \
-    rm -rf /var/cache/apk/*; \
-    rm -rf /tmp/*
+# Create appuser
+RUN adduser -D -g '' appuser
 
+WORKDIR $GOPATH/src/dio-bot/app
+COPY ./app .
 
-ENV APP_PATH /go/src/dio-bot
-WORKDIR ${APP_PATH}
-RUN go get -u github.com/tockins/realize
+# Fetch dependencies.
+RUN go get -d -v
 
-RUN mkdir app
-COPY . .
+# Build the binary
+#RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/dio .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -a -installsuffix cgo -o /go/bin/dio .
+
+############################
+# STEP 2 build a small image
+############################
+FROM scratch
+
+# Import from builder.
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /etc/passwd /etc/passwd
+
+# Copy dio static executable
+COPY --from=builder /go/bin/dio /go/bin/dio
+
+# Use an unprivileged user.
+USER appuser
+
+# expose port 9999 for DIO
 EXPOSE 9999
+
+# Run the binary.
+ENTRYPOINT ["/go/bin/dio"]
