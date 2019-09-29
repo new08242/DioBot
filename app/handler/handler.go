@@ -1,13 +1,14 @@
 package handler
 
 import (
+	diegoBrando "dio-bot/app/dio"
+
 	"fmt"
 	"net/http"
-	diegoBrando "dio-bot/app/dio"
 )
 
 func PingHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Hello")
+	// fmt.Println("Hello")
 }
 
 func ReceiveMessageHandler(w http.ResponseWriter, r *http.Request) {
