@@ -9,6 +9,7 @@ import (
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/receive_message", handler.ReceiveMessageHandler)
+	mux.HandleFunc("/dio/receive_message", handler.ReceiveMessageHandler)
 	mux.HandleFunc("/", handler.PingHandler)
 
 	http.ListenAndServe(":9999", mux)
