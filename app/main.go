@@ -1,16 +1,22 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
+	"dio-bot/app/dio"
 	"dio-bot/app/handler"
 )
 
 func main() {
+	db, err := dio.NewMemory()
+	if err != nil {
+		fmt.Errorf("dio new memory error:", err)
+	}
+	defer db.Close()
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/receive_message", handler.ReceiveMessageHandler)
 	mux.HandleFunc("/dio/receive_message", handler.ReceiveMessageHandler)
-	mux.HandleFunc("/", handler.PingHandler)
 
 	http.ListenAndServe(":9999", mux)
 }

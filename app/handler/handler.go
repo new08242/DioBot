@@ -7,10 +7,6 @@ import (
 	"net/http"
 )
 
-func PingHandler(w http.ResponseWriter, r *http.Request) {
-	// fmt.Println("Hello")
-}
-
 func ReceiveMessageHandler(w http.ResponseWriter, r *http.Request) {
 	dio := diegoBrando.NewDio()
 	dioBot := dio.BotClient
