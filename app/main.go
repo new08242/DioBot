@@ -11,7 +11,7 @@ import (
 func main() {
 	db, err := dio.NewMemory()
 	if err != nil {
-		fmt.Errorf("dio new memory error:", err)
+		fmt.Println("dio new memory error:", err)
 	}
 	defer db.Close()
 

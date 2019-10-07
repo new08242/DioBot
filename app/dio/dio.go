@@ -44,6 +44,7 @@ func (d Dio) MUDA(token string) error {
 }
 
 func (d Dio) HandleEvent(events []*linebot.Event) error {
+	fmt.Println("Wryy handle event")
 	if len(events) < 1 {
 		return errors.New("no event for Dio")
 	}
