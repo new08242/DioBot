@@ -8,10 +8,12 @@ import (
 	"io/ioutil"
 )
 
+func Ping(w http.ResponseWriter, r *http.Request) {}
+
 func ReceiveMessageHandler(w http.ResponseWriter, r *http.Request) {
 	dio := diegoBrando.NewDio()
 	dioBot := dio.BotClient
-
+	
 	rawReq, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Errorf("[ReceiveMessageHandler] read request:", err)

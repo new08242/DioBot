@@ -16,6 +16,8 @@ func main() {
 	defer db.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/", handler.Ping)
+	mux.HandleFunc("/dio/", handler.Ping)
 	mux.HandleFunc("/dio/receive_message", handler.ReceiveMessageHandler)
 
 	http.ListenAndServe(":9999", mux)
