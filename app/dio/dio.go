@@ -3,16 +3,18 @@ package dio
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/jinzhu/gorm"
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
 type Dio struct {
 	BotClient      *linebot.Client
 	DefaultMessage *linebot.TextMessage
-	OrderMemory		FoodOrderPersistance
+	OrderMemory    FoodOrderPersistance
 }
 
 func NewDio() Dio {
@@ -31,7 +33,7 @@ func NewDio() Dio {
 }
 
 var (
-	wryyyy = linebot.NewTextMessage(`Wryyyyy!!! Confirm!!`)
+	wryyyy  = linebot.NewTextMessage(`Wryyyyy!!! Confirm!!`)
 	LIFFURL = linebot.NewTextMessage("line://app/1622344082-zYW59LY3")
 )
 
@@ -96,10 +98,9 @@ func (d Dio) MessageTypeTextHandler(event linebot.Event, textMessage string) err
 		orderID = event.Source.UserID
 	}
 
-
-	switch message {
+	switch textMessage {
 	case "#hiew":
-		fmt.Println("Wryyyy!!!! Zawarudo The World!!!!!")
+		fmt.Println("Wryyyy!!!! Zawarudo!!!!!")
 		if _, err := d.BotClient.ReplyMessage(token, LIFFURL).Do(); err != nil {
 			return err
 		}
@@ -110,8 +111,8 @@ func (d Dio) MessageTypeTextHandler(event linebot.Event, textMessage string) err
 		}
 	case "#confirm":
 		fmt.Println("ROAD ROLLER DA!!!!!")
-		// get order if exists
-		order, err := d.OrderMemory.FindByID(orderID)
+		//delete order
+		order, err := d.OrderMemory.DeleteByID(orderID)
 		if err != nil {
 			d.MUDA(token)
 			return err
@@ -120,46 +121,73 @@ func (d Dio) MessageTypeTextHandler(event linebot.Event, textMessage string) err
 		// confirm message
 		orderMenuMessage := linebot.NewTextMessage(order.Menu)
 		if _, err := d.BotClient.ReplyMessage(token, orderMenuMessage).Do(); err != nil {
-			return err
-		}
-
-		//delete order
-		if err := d.OrderMemory.DeleteByID(orderID); err != nil {
 			d.MUDA(token)
-			return err
-		}
-
-	case "#order":
-		//check is order
-		menu, err := d.DecodeMenu(message)
-		if err != nil {
-			d.MUDA(token)
-			return err
-		}
-
-		// get order if exists
-		order, err := d.OrderMemory.FindByID(orderID)
-		if err != nil {
-			d.MUDA(token)
-			return err
-		}
-
-		// is order update database
-		updateOrder := order
-		updateOrder.Menu = fmt.Sprintf("%s\n%s", order.Menu, menu)
-		updateOrder, err = d.OrderMemory.Upsert(updateOrder)
-		if err != nil {
-			d.MUDA(token)
-			return err
-		}
-
-		//reply updated menu
-		if _, err := d.BotClient.ReplyMessage(token, linebot.NewTextMessage(updateOrder.Menu)).Do(); err != nil {
 			return err
 		}
 
 	default:
+		if strings.Contains(textMessage, "#order") {
+			//check is order
+			menu, err := d.DecodeMenu(textMessage)
+			if err != nil {
+				d.MUDA(token)
+				return err
+			}
+			fmt.Println("menu:", menu)
+			menuCount := make(map[string]int)
 
+			// get order if exists
+			order, err := d.OrderMemory.FindByID(orderID)
+			if err != nil && err != gorm.ErrRecordNotFound {
+				d.MUDA(token)
+				return err
+			}
+			if err == gorm.ErrRecordNotFound {
+				order.CreatedAt = time.Now()
+			}
+			order.ID = orderID
+			order.UpdatedAt = time.Now()
+
+			fmt.Println("Menu from memory:", order.Menu)
+			// count menu list
+			menuList := strings.Split(order.Menu, "\n")
+			fmt.Println("Menu list after split:", menuList, "len:", len(menuList))
+
+			updateOrder := order
+			menuResult := ""
+			isNewMenu := true
+			for _, mList := range menuList {
+				if !strings.Contains(mList, ": ") {
+					continue
+				}
+				mListSplit := strings.Split(mList, ": ")
+				c, _ := strconv.Atoi(mListSplit[1])
+				if strings.TrimSpace(mListSplit[0]) == strings.TrimSpace(menu) {
+					isNewMenu = false
+					c++
+				}
+				menuCount[mListSplit[0]] = c
+
+				menuResult = fmt.Sprintf("%s\n%s: %d", menuResult, mListSplit[0], c)
+			}
+			if isNewMenu {
+				menuResult = fmt.Sprintf("%s\n%s: %d", menuResult, menu, 1)
+			}
+
+			updateOrder.Menu = menuResult
+
+			// is order update database
+			updateOrder, err = d.OrderMemory.Upsert(updateOrder)
+			if err != nil {
+				d.MUDA(token)
+				return err
+			}
+
+			//reply updated menu
+			if _, err := d.BotClient.ReplyMessage(token, linebot.NewTextMessage(updateOrder.Menu)).Do(); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -175,21 +203,22 @@ func (d Dio) DecodeMenu(message string) (string, error) {
 	}
 	message = messages[1]
 
-	orderNums := strings.Split(message, " ")
 	var nums []int
-
-	// validate format must be number
-	if len(orderNums) == 3 {
-		for _, num := range orderNums {
-			n, err := strconv.Atoi(num)
-			if err != nil {
-				return "", err
-			}
-			nums = append(nums, n)
-		}
+	// validate len
+	if len(message) < 3 {
+		return "", errors.New("invalid message")
 	}
 
-	order = fmt.Sprintf("%s %s %s", Menu[nums[0]], Menu[nums[1]], Menu[nums[2]])
+	// validate format must be number
+	for _, mesByte := range message {
+		n, err := strconv.Atoi(string(mesByte))
+		if err != nil {
+			return "", err
+		}
+		nums = append(nums, n)
+	}
+
+	order = fmt.Sprintf("%s %s %s", Menu[nums[0]-1], Special[nums[1]], Egg[nums[2]])
 
 	return order, nil
 }

@@ -7,23 +7,15 @@ import (
 )
 
 var (
-	Menu = make(map[int]string)
-	message =
-`%s
-1. หมูทอดคั่วพริกเกลือ+กะหล่ำทอดน้ำปลา
-2. ไก่กรอบคั่วพริกเกลือ+กะหล่ำทอดน้ำปลา
-3. หมูทอดคั่วพริกเกลือ
-4. ไก่กรอบคั่วพริกเกลือ
-5. ผัดมาม่าหมู
-6. สุกี้แห้ง
-
-manual order format:
+	Menu []string
+	message = `manual order format:
 เลขเมนู ธรรมดา0พิเศษ1 ไม่ไข่0ไข่ดาว1ไข่เจียว2
+
 ตัวอย่าง
 - ผัดมาม่าหมู พิเศษ ไข่เจียว
-ให้สั่ง "5 1 2"
+ให้สั่ง "#order512"
 - หมูทอดคั่วพริกเกลือ ธรรมดา
-ให้สั่ง "3 0 0"
+ให้สั่ง "#order300"
 `
 	Special = make(map[int]string)
 
@@ -32,21 +24,29 @@ manual order format:
 	MenuMessage = linebot.NewTextMessage(message)
 )
 
-func init(){
-	Menu[0] = "หมูทอดคั่วพริกเกลือ+กะหล่ำทอดน้ำปลา"
-	Menu[1] = "ไก่กรอบคั่วพริกเกลือ+กะหล่ำทอดน้ำปลา"
-	Menu[2] = "หมูทอดคั่วพริกเกลือ"
-	Menu[3] = "ไก่กรอบคั่วพริกเกลือ"
-	Menu[4] = "ผัดมาม่าหมู"
-	Menu[5] = "สุกี้แห้ง"
+func init() {
+	Menu = append(Menu,"หมูทอดคั่วพริกเกลือ+กะหล่ำทอดน้ำปลา")
+	Menu = append(Menu,"ไก่กรอบคั่วพริกเกลือ+กะหล่ำทอดน้ำปลา")
+	Menu = append(Menu,"หมูทอดคั่วพริกเกลือ")
+	Menu = append(Menu,"ไก่กรอบคั่วพริกเกลือ")
+	Menu = append(Menu,"ผัดมาม่าหมู")
+	Menu = append(Menu,"สุกี้แห้ง")
+	Menu = append(Menu,"กระเพราหมู")
+
+	Special[0] = "ธรรมดา"
+	Special[1] = "พิเศษ"
+
+	Egg[0] = ""
+	Egg[1] = "ไข่ดาว"
+	Egg[2] = "ไข่เจียว"
 
 	menuList := ""
 	//gen menu message
-	for i, m := range Menu {
-		menuList = fmt.Sprintf("%s\n%d.%s", menuList, i+1, m)
+	for i, _ := range Menu {
+		menuList = fmt.Sprintf("%s\n%d.%s", menuList, i+1, Menu[i])
 	}
 
-	message = fmt.Sprintf(message, menuList)
+	message = fmt.Sprintf("%s\n\n%s", menuList, message)
 
 	MenuMessage = linebot.NewTextMessage(message)
 }

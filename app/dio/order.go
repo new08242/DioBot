@@ -17,7 +17,7 @@ type FoodOrder struct {
 type FoodOrderRepository interface {
 	Upsert(FoodOrder) (FoodOrder, error)
 	FindByID(id string) (FoodOrder, error)
-	DeleteByID(id string) error
+	DeleteByID(id string) (FoodOrder, error)
 }
 
 type FoodOrderPersistance struct {
@@ -46,16 +46,17 @@ func (p FoodOrderPersistance) FindByID(id string) (FoodOrder, error) {
 	return result, nil
 }
 
-func (p FoodOrderPersistance) DeleteByID(id string) error {
-	dbRes := p.db.Raw(deleteFoodOrderSQL, id)
+func (p FoodOrderPersistance) DeleteByID(id string) (FoodOrder, error) {
+	var result FoodOrder
+
+	dbRes := p.db.Raw(deleteFoodOrderSQL, id).Scan(&result)
 	if dbRes.Error != nil {
-		return dbRes.Error
+		return FoodOrder{}, dbRes.Error
 	}
-	return nil
+	return result, nil
 }
 
-var upsertFoodOrderSQL =
-`insert into food_order (id, menu, created_at, updated_at)
+var upsertFoodOrderSQL = `insert into food_order (id, menu, created_at, updated_at)
 values ($1, $2, $3, $4)
 on conflict (id)
 do
@@ -63,10 +64,7 @@ do
 	set menu= EXCLUDED.menu
 returning *;`
 
-var getFoodOrderSQL =
-`select * from food_order
+var getFoodOrderSQL = `select * from food_order
     where id = $1;`
 
-var deleteFoodOrderSQL =
-`delete from food_order
-	where food_order.id = $1;`
+var deleteFoodOrderSQL = `delete from food_order where id = $1 returning *;`
